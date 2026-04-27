@@ -1,3 +1,9 @@
+use tracing::info;
+
+mod logging;
+
 fn main() {
-    println!("Hello, world!");
+    logging::init_logging();
+
+    info!("Program started");
 }
