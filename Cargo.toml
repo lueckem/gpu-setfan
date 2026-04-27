@@ -1,0 +1,10 @@
+[package]
+name = "gpu-setfan"
+authors = ["Marvin Lücke"]
+description = "GPU fan control via temperature setpoint"
+license = "MIT"
+edition = "2024"
+rust-version = "1.95.0"
+version = "0.1.0"
+
+[dependencies]
