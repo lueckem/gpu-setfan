@@ -1,5 +1,6 @@
 use tracing::info;
 
+mod fanspeed;
 mod logging;
 
 fn main() {
