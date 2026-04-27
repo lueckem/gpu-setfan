@@ -1,6 +1,7 @@
 use tracing::info;
 
 mod fanspeed;
+mod interface;
 mod logging;
 mod temperature;
 
