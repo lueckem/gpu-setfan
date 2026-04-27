@@ -4,7 +4,7 @@ use thiserror::Error;
 ///
 /// Internally stored as f64 between 0.0 and 1.0,
 /// but can convert to and from the percentage representation as u32.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct FanSpeed(f64);
 
 impl TryFrom<f64> for FanSpeed {
