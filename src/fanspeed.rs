@@ -7,6 +7,17 @@ use thiserror::Error;
 #[derive(Debug, Clone, Copy)]
 pub struct FanSpeed(f64);
 
+impl FanSpeed {
+    pub fn zero() -> Self {
+        Self(0.0)
+    }
+
+    /// Retrieve the inner value (f64 between 0.0 and 1.0)
+    pub fn inner(self) -> f64 {
+        self.0
+    }
+}
+
 impl TryFrom<f64> for FanSpeed {
     type Error = FanSpeedError;
 

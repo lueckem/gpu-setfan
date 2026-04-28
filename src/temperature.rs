@@ -3,8 +3,15 @@ use thiserror::Error;
 /// GPU temperature in °C.
 ///
 /// Stored as f64 between 0.0 and 120.0.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct GPUTemperature(f64);
+
+impl GPUTemperature {
+    /// Retrieve the inner value (f64 between 0.0 and 120.0)
+    pub fn inner(self) -> f64 {
+        self.0
+    }
+}
 
 impl TryFrom<f64> for GPUTemperature {
     type Error = GPUTemperatureError;
