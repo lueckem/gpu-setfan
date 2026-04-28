@@ -6,13 +6,14 @@ use crate::{fanspeed::FanSpeed, interface::GPUInterface, temperature::GPUTempera
 
 pub struct NvidiaGPU<'a> {
     device: Device<'a>,
+    num_fans: u32,
 }
 
-// TODO: store num_fans?
-
 impl<'a> NvidiaGPU<'a> {
-    pub fn new(device: Device<'a>) -> Self {
-        Self { device }
+    pub fn init(device: Device<'a>) -> anyhow::Result<Self> {
+        let num_fans = device.num_fans().context("Failed to get number of fans")?;
+        debug!("Initialized NvidiaGPU with {num_fans} fans");
+        Ok(Self { device, num_fans })
     }
 }
 
@@ -29,12 +30,7 @@ impl GPUInterface for NvidiaGPU<'_> {
 
     fn set_fan_speed(&mut self, target: FanSpeed) -> anyhow::Result<()> {
         let target: u32 = target.into();
-        let fan_count = self
-            .device
-            .num_fans()
-            .context("Failed to get number of fans")?;
-        debug!("Number of fans: {fan_count}");
-        for fan_index in 0..fan_count {
+        for fan_index in 0..self.num_fans {
             self.device
                 .set_fan_speed(fan_index, target)
                 .context("Failed to set fan speed")?;
@@ -44,11 +40,7 @@ impl GPUInterface for NvidiaGPU<'_> {
     }
 
     fn restore_default_policy(&mut self) -> anyhow::Result<()> {
-        let fan_count = self
-            .device
-            .num_fans()
-            .context("Failed to get number of fans")?;
-        for fan_index in 0..fan_count {
+        for fan_index in 0..self.num_fans {
             self.device.set_default_fan_speed(fan_index)?;
         }
         debug!("Restored default fan policy");
