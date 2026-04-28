@@ -9,6 +9,7 @@ mod fanspeed;
 mod interface;
 mod logging;
 mod nvidia;
+mod pi_controller;
 mod temperature;
 
 fn main() {
