@@ -19,6 +19,7 @@ fn main() {
     let nvml = Nvml::init().unwrap();
     let device = nvml.device_by_index(0).unwrap();
     let gpu = NvidiaGPU::init(device).unwrap();
+    info!("Initialized Nvidia GPU '{}'", gpu.name);
 
     loop {
         let temp = gpu.read_temperature().unwrap();

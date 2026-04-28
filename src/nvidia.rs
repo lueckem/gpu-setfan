@@ -6,14 +6,20 @@ use crate::{fanspeed::FanSpeed, interface::GPUInterface, temperature::GPUTempera
 
 pub struct NvidiaGPU<'a> {
     device: Device<'a>,
+    pub name: String,
     num_fans: u32,
 }
 
 impl<'a> NvidiaGPU<'a> {
     pub fn init(device: Device<'a>) -> anyhow::Result<Self> {
+        let name = device.name().unwrap_or("UNKNOWN".into());
         let num_fans = device.num_fans().context("Failed to get number of fans")?;
-        debug!("Initialized NvidiaGPU with {num_fans} fans");
-        Ok(Self { device, num_fans })
+        debug!("Initialized NvidiaGPU {name} with {num_fans} fans");
+        Ok(Self {
+            device,
+            name,
+            num_fans,
+        })
     }
 }
 
