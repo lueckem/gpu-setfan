@@ -32,10 +32,10 @@ impl PIController {
         if self.integral_gain > 0.0 {
             self.integral += err * delta_t;
 
-            // clamp the integral term in [-0.5, 0.5] so it does not wind up too much
+            // clamp the integral term in [-1, 1] so it does not wind up too much
             self.integral = self
                 .integral
-                .clamp(-0.5 / self.integral_gain, 0.5 / self.integral_gain);
+                .clamp(-1.0 / self.integral_gain, 1.0 / self.integral_gain);
         }
 
         let u = self.proportional_gain * err + self.integral_gain * self.integral;
@@ -100,20 +100,20 @@ mod tests {
     fn integral_wind_up_pos() {
         let mut controller = PIController::new(0.0, 1.0, 1.0);
         for _ in 0..100 {
-            controller.update(1.0, 1.0);
+            controller.update(0.1, 1.0);
         }
         let u = controller.update(0.0, 1.0);
-        assert_eq!(u, 0.5);
+        assert_eq!(u, 1.0);
     }
 
     #[test]
     fn integral_wind_up_neg() {
         let mut controller = PIController::new(0.0, 1.0, 1.0);
         for _ in 0..100 {
-            controller.update(-1.0, 1.0);
+            controller.update(-0.2, 1.0);
         }
         let u = controller.update(0.0, 1.0);
-        assert_eq!(u, -0.5);
+        assert_eq!(u, -1.0);
     }
 
     #[test]
