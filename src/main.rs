@@ -18,9 +18,6 @@ const TARGET_TEMPERATURE: f64 = 80.0;
 const FAN_ON_TEMPERATURE: f64 = 65.0;
 const FAN_OFF_TEMPERATURE: f64 = 55.0;
 const MIN_FAN_SPEED: u32 = 30;
-const PROPORTIONAL_GAIN: f64 = 0.1;
-const INTEGRAL_GAIN: f64 = 0.01;
-const SMOOTHING_FACTOR: f64 = 0.5;
 
 fn main() {
     logging::init_logging();
@@ -37,9 +34,6 @@ fn main() {
         FAN_ON_TEMPERATURE.try_into().unwrap(),
         FAN_OFF_TEMPERATURE.try_into().unwrap(),
         MIN_FAN_SPEED.try_into().unwrap(),
-        PROPORTIONAL_GAIN,
-        INTEGRAL_GAIN,
-        SMOOTHING_FACTOR,
     );
 
     loop {

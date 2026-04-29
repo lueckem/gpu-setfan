@@ -26,10 +26,10 @@ impl FanController {
         fan_on_temperature: GPUTemperature,
         fan_off_temperature: GPUTemperature,
         min_fan_speed: FanSpeed,
-        proportional_gain: f64,
-        integral_gain: f64,
-        smoothing_factor: f64,
     ) -> Self {
+        let proportional_gain = 0.1;
+        let integral_gain = 0.01;
+        let smoothing_factor = 0.5;
         Self {
             pi_controller: PIController::new(proportional_gain, integral_gain, smoothing_factor),
             target_temperature,
@@ -40,8 +40,6 @@ impl FanController {
             last_eval: Instant::now(),
         }
     }
-
-    // TODO: Constructor that chooses proportional_gain, integral_gain, smoothing_factor automatically from target_temperature
 
     pub fn eval(&mut self, temp: GPUTemperature) -> FanSpeed {
         if self.fans_off && temp < self.fan_on_temperature {
