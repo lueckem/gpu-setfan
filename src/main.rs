@@ -4,7 +4,11 @@ use anyhow::Context;
 use nvml_wrapper::Nvml;
 use tracing::{debug, info, warn};
 
-use crate::{fan_controller::FanController, interface::GPUInterface, nvidia::NvidiaGPU};
+use crate::{
+    fan_controller::FanController,
+    interface::{GPUInterface, gpus_to_string},
+    nvidia::NvidiaGPU,
+};
 
 mod fan_controller;
 mod fanspeed;
@@ -42,6 +46,7 @@ fn main() -> anyhow::Result<()> {
     if gpus.is_empty() {
         anyhow::bail!("Could not detect any GPU");
     }
+    info!("Initialized GPUs: {}", gpus_to_string(&gpus));
 
     // TODO: create one controller per GPU
     let mut fan_controller = FanController::new(
@@ -71,7 +76,6 @@ fn initialize_nvidia(nvml: &Nvml) -> anyhow::Result<Vec<Box<dyn GPUInterface + '
     for i in 0..num_devices {
         let device = nvml.device_by_index(i).context("Failed to get device")?;
         let gpu = NvidiaGPU::init(device).context("Failed to initialize NvidiaGPU")?;
-        info!("Initialized Nvidia GPU '{}'", gpu.name());
         gpus.push(Box::new(gpu));
     }
     Ok(gpus)
