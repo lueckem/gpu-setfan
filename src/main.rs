@@ -1,7 +1,8 @@
 use std::{thread::sleep, time::Duration};
 
+use anyhow::Context;
 use nvml_wrapper::Nvml;
-use tracing::info;
+use tracing::{debug, info, warn};
 
 use crate::{fan_controller::FanController, interface::GPUInterface, nvidia::NvidiaGPU};
 
@@ -27,9 +28,15 @@ fn main() -> anyhow::Result<()> {
     let nvml_res = Nvml::init();
     let mut gpus: Vec<Box<dyn GPUInterface>> = Vec::new();
     if let Ok(ref nvml) = nvml_res {
-        if let Ok(gpus_nvidia) = initialize_nvidia(nvml) {
-            gpus.extend(gpus_nvidia);
+        match initialize_nvidia(nvml) {
+            Ok(gpus_nvidia) => gpus.extend(gpus_nvidia),
+            Err(err) => warn!(
+                "Nvml was loaded, but no Nvidia GPU could be detected: {:#}",
+                err
+            ),
         }
+    } else {
+        debug!("Nvml was not loaded: {:#}", nvml_res.unwrap_err());
     }
 
     if gpus.is_empty() {
@@ -44,6 +51,8 @@ fn main() -> anyhow::Result<()> {
         MIN_FAN_SPEED.try_into().unwrap(),
     );
 
+    info!("Fan control started");
+
     // TODO: go over each (gpu, controller) pair
     loop {
         for gpu in &mut gpus {
@@ -57,11 +66,11 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn initialize_nvidia(nvml: &Nvml) -> anyhow::Result<Vec<Box<dyn GPUInterface + '_>>> {
-    let num_devices = nvml.device_count()?;
+    let num_devices = nvml.device_count().context("Failed to get device count")?;
     let mut gpus: Vec<Box<dyn GPUInterface>> = Vec::with_capacity(num_devices as usize);
     for i in 0..num_devices {
-        let device = nvml.device_by_index(i)?;
-        let gpu = NvidiaGPU::init(device)?;
+        let device = nvml.device_by_index(i).context("Failed to get device")?;
+        let gpu = NvidiaGPU::init(device).context("Failed to initialize NvidiaGPU")?;
         info!("Initialized Nvidia GPU '{}'", gpu.name);
         gpus.push(Box::new(gpu));
     }
