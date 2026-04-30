@@ -71,7 +71,7 @@ fn initialize_nvidia(nvml: &Nvml) -> anyhow::Result<Vec<Box<dyn GPUInterface + '
     for i in 0..num_devices {
         let device = nvml.device_by_index(i).context("Failed to get device")?;
         let gpu = NvidiaGPU::init(device).context("Failed to initialize NvidiaGPU")?;
-        info!("Initialized Nvidia GPU '{}'", gpu.name);
+        info!("Initialized Nvidia GPU '{}'", gpu.name());
         gpus.push(Box::new(gpu));
     }
     Ok(gpus)

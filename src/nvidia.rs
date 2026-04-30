@@ -6,7 +6,7 @@ use crate::{fanspeed::FanSpeed, interface::GPUInterface, temperature::GPUTempera
 
 pub struct NvidiaGPU<'a> {
     device: Device<'a>,
-    pub name: String,
+    name: String,
     num_fans: u32,
 }
 
@@ -24,6 +24,10 @@ impl<'a> NvidiaGPU<'a> {
 }
 
 impl GPUInterface for NvidiaGPU<'_> {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
     fn read_temperature(&self) -> anyhow::Result<GPUTemperature> {
         let temp = self
             .device
