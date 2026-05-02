@@ -48,19 +48,19 @@ fn main() -> anyhow::Result<()> {
     }
     info!("Initialized GPUs: {}", gpus_to_string(&gpus));
 
-    // TODO: create one controller per GPU
-    let mut fan_controller = FanController::new(
+    let fan_controller = FanController::new(
         TARGET_TEMPERATURE.try_into().unwrap(),
         FAN_ON_TEMPERATURE.try_into().unwrap(),
         FAN_OFF_TEMPERATURE.try_into().unwrap(),
         MIN_FAN_SPEED.try_into().unwrap(),
     );
+    let mut fan_controllers = vec![fan_controller; gpus.len()];
 
     info!("Fan control started");
 
-    // TODO: go over each (gpu, controller) pair
     loop {
-        for gpu in &mut gpus {
+        for (gpu, fan_controller) in gpus.iter_mut().zip(fan_controllers.iter_mut()) {
+            // TODO: handle errors
             let temp = gpu.read_temperature().unwrap();
             let target = fan_controller.eval(temp);
             gpu.set_fan_speed(target).unwrap();

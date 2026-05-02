@@ -10,6 +10,7 @@ use crate::{fanspeed::FanSpeed, pi_controller::PIController, temperature::GPUTem
 /// - The fans get turned on when temperature exceeds `fan_on_temperature`.
 /// - Then the fan speed is controlled with a PI controller aiming at `target_temperature`. The fan speed is always larger than the `min_fan_speed`.
 /// - If the temperature falls below the `fan_off_temperature`, the fans will get turned off again.
+#[derive(Clone)]
 pub struct FanController {
     pi_controller: PIController,
     target_temperature: GPUTemperature,

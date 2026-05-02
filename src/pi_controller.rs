@@ -6,6 +6,7 @@
 ///
 /// The computed control `u` is clamped in `[-1, 1]` and then smoothed via
 /// `u = smoothing_factor * u + (1 - smoothing factor) * last_u`.
+#[derive(Clone)]
 pub struct PIController {
     proportional_gain: f64,
     integral_gain: f64,
