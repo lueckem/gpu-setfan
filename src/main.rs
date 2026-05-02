@@ -1,7 +1,7 @@
 use std::{thread::sleep, time::Duration};
 
 use nvml_wrapper::Nvml;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     fan_controller::FanController,
@@ -57,14 +57,42 @@ fn main() -> anyhow::Result<()> {
 
     info!("Fan control started");
 
-    loop {
+    'outer: loop {
         for (gpu, fan_controller) in gpus.iter_mut().zip(fan_controllers.iter_mut()) {
-            // TODO: handle errors
-            let temp = gpu.read_temperature().unwrap();
-            let target = fan_controller.eval(temp);
-            gpu.set_fan_speed(target).unwrap();
+            let temperature = match gpu.read_temperature() {
+                Ok(t) => t,
+                Err(err) => {
+                    error!("Failed to read temperature on '{}': {}", gpu.name(), err);
+                    break 'outer;
+                }
+            };
+
+            let target = fan_controller.eval(temperature);
+
+            if let Err(err) = gpu.set_fan_speed(target) {
+                error!("Failed to set fan speed on '{}': {}", gpu.name(), err);
+                break 'outer;
+            }
         }
 
         sleep(Duration::from_millis(UPDATE_PERIOD));
+    }
+
+    info!("Terminating program due to critical error");
+    restore_default_policies(&mut gpus);
+    anyhow::bail!("Program terminated due to critical error");
+}
+
+fn restore_default_policies(gpus: &mut [Box<dyn GPUInterface + '_>]) {
+    for gpu in gpus.iter_mut() {
+        if let Err(err) = gpu.restore_default_policy() {
+            warn!(
+                "Failed to restore default fan control on '{}': {}",
+                gpu.name(),
+                err
+            )
+        } else {
+            info!("Restored default fan control on {}", gpu.name());
+        }
     }
 }
