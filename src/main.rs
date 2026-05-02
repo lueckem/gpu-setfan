@@ -1,4 +1,7 @@
-use std::{thread::sleep, time::Duration};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread::sleep;
+use std::time::Duration;
 
 use nvml_wrapper::Nvml;
 use tracing::{debug, error, info, warn};
@@ -26,6 +29,15 @@ const MIN_FAN_SPEED: u32 = 30;
 fn main() -> anyhow::Result<()> {
     logging::init_logging();
     info!("Program started");
+
+    // setup ctrl-c signal handling
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+    if let Err(err) = ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    }) {
+        warn!("Failed to set ctrl-c signal handler: {}", err);
+    }
 
     // detect and initialize gpus
     let nvml_res = Nvml::init();
@@ -57,42 +69,46 @@ fn main() -> anyhow::Result<()> {
 
     info!("Fan control started");
 
-    'outer: loop {
+    while running.load(Ordering::SeqCst) {
         for (gpu, fan_controller) in gpus.iter_mut().zip(fan_controllers.iter_mut()) {
             let temperature = match gpu.read_temperature() {
                 Ok(t) => t,
                 Err(err) => {
-                    error!("Failed to read temperature on '{}': {}", gpu.name(), err);
-                    break 'outer;
+                    error!("Failed to read temperature on '{}': {:#}", gpu.name(), err);
+                    error!("Terminating program due to critical error");
+                    restore_default_policies(&mut gpus);
+                    anyhow::bail!("Program terminated due to critical error");
                 }
             };
 
             let target = fan_controller.eval(temperature);
 
             if let Err(err) = gpu.set_fan_speed(target) {
-                error!("Failed to set fan speed on '{}': {}", gpu.name(), err);
-                break 'outer;
+                error!("Failed to set fan speed on '{}': {:#}", gpu.name(), err);
+                error!("Terminating program due to critical error");
+                restore_default_policies(&mut gpus);
+                anyhow::bail!("Program terminated due to critical error");
             }
         }
 
         sleep(Duration::from_millis(UPDATE_PERIOD));
     }
 
-    info!("Terminating program due to critical error");
+    info!("Received termination signal. Exiting program...");
     restore_default_policies(&mut gpus);
-    anyhow::bail!("Program terminated due to critical error");
+    Ok(())
 }
 
 fn restore_default_policies(gpus: &mut [Box<dyn GPUInterface + '_>]) {
     for gpu in gpus.iter_mut() {
         if let Err(err) = gpu.restore_default_policy() {
             warn!(
-                "Failed to restore default fan control on '{}': {}",
+                "Failed to restore default fan control on '{}': {:#}",
                 gpu.name(),
                 err
             )
         } else {
-            info!("Restored default fan control on {}", gpu.name());
+            info!("Restored default fan control on '{}'", gpu.name());
         }
     }
 }
