@@ -6,7 +6,7 @@ use tracing::{debug, info, warn};
 use crate::{
     fan_controller::FanController,
     interface::{GPUInterface, gpus_to_string},
-    nvidia::initialize_nvidia,
+    nvidia::initialize_nvidia_gpus,
 };
 
 mod fan_controller;
@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
     let nvml_res = Nvml::init();
     let mut gpus: Vec<Box<dyn GPUInterface>> = Vec::new();
     if let Ok(ref nvml) = nvml_res {
-        match initialize_nvidia(nvml) {
+        match initialize_nvidia_gpus(nvml) {
             Ok(gpus_nvidia) => gpus.extend(gpus_nvidia),
             Err(err) => warn!(
                 "Nvml was loaded, but no Nvidia GPU could be detected: {:#}",

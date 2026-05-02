@@ -59,7 +59,7 @@ impl GPUInterface for NvidiaGPU<'_> {
 }
 
 /// Detect and initialize all Nvidia GPUs with controllable fans
-pub fn initialize_nvidia(nvml: &Nvml) -> anyhow::Result<Vec<Box<dyn GPUInterface + '_>>> {
+pub fn initialize_nvidia_gpus(nvml: &Nvml) -> anyhow::Result<Vec<Box<dyn GPUInterface + '_>>> {
     let num_devices = nvml.device_count().context("Failed to get device count")?;
     let mut gpus: Vec<Box<dyn GPUInterface>> = Vec::with_capacity(num_devices as usize);
     for i in 0..num_devices {
