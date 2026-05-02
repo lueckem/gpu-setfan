@@ -3,6 +3,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
 
+use anyhow::bail;
+use clap::Parser;
 use nvml_wrapper::Nvml;
 use tracing::{debug, error, info, warn};
 
@@ -21,14 +23,71 @@ mod pi_controller;
 mod temperature;
 
 const UPDATE_PERIOD: u64 = 1000; // in ms
-const TARGET_TEMPERATURE: f64 = 80.0;
-const FAN_ON_TEMPERATURE: f64 = 65.0;
-const FAN_OFF_TEMPERATURE: f64 = 55.0;
-const MIN_FAN_SPEED: u32 = 30;
+
+// TODO: description
+
+#[derive(Parser, Debug)]
+#[command(version, about)]
+struct Args {
+    #[arg(default_value = "80", help = "in °C")]
+    target_temperature: Option<f64>,
+
+    #[arg(long, help = "Temperature in °C at which fans turn on")]
+    fan_on: Option<f64>,
+
+    #[arg(long, help = "Temperature in °C at which fans turn off")]
+    fan_off: Option<f64>,
+
+    #[arg(
+        long,
+        default_value = "30",
+        help = "Minimum fan speed in % (between 0 and 100)"
+    )]
+    min_speed: Option<u32>,
+}
+
+fn validate_args(args: Args) -> anyhow::Result<FanController> {
+    let target_temperature = args.target_temperature.unwrap();
+    let fan_on_temperature = args.fan_on.unwrap_or(target_temperature - 10.0);
+    let fan_off_temperature = args.fan_off.unwrap_or(fan_on_temperature - 5.0);
+    let min_fan_speed = args.min_speed.unwrap();
+
+    // TODO: more checks and testing
+    // TODO: warn if parameters are odd? E.g., min_fan_speed=90
+    if target_temperature < 30.0 || target_temperature > 100.0 {
+        bail!("Invalid target temperature {target_temperature}! Choose a value between 30 and 100");
+    }
+    if fan_on_temperature >= target_temperature {
+        bail!("The fan-on temperature has to be smaller than the target temperature");
+    }
+    if fan_off_temperature >= fan_on_temperature {
+        bail!("The fan-off temperature has to be smaller than the fan-on temperature");
+    }
+    if fan_on_temperature < 20.0 {
+        bail!("Invalid fan-on temperature {fan_on_temperature}! Choose a value larger than 20");
+    }
+    if fan_off_temperature < 15.0 {
+        bail!("Invalid fan-off temperature {fan_on_temperature}! Choose a value larger than 15");
+    }
+    if min_fan_speed > 100 {
+        bail!("Invalid minimum fan speed {min_fan_speed}! Choose a value between 0 and 100");
+    }
+
+    Ok(FanController::new(
+        target_temperature.try_into().unwrap(),
+        fan_on_temperature.try_into().unwrap(),
+        fan_off_temperature.try_into().unwrap(),
+        min_fan_speed.try_into().unwrap(),
+    ))
+}
 
 fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
+    let fan_controller = validate_args(args)?;
+
     logging::init_logging();
     info!("Program started");
+    // TODO: log the parsed parameters
 
     // setup ctrl-c signal handling
     let running = Arc::new(AtomicBool::new(true));
@@ -59,12 +118,6 @@ fn main() -> anyhow::Result<()> {
     }
     info!("Initialized GPUs: {}", gpus_to_string(&gpus));
 
-    let fan_controller = FanController::new(
-        TARGET_TEMPERATURE.try_into().unwrap(),
-        FAN_ON_TEMPERATURE.try_into().unwrap(),
-        FAN_OFF_TEMPERATURE.try_into().unwrap(),
-        MIN_FAN_SPEED.try_into().unwrap(),
-    );
     let mut fan_controllers = vec![fan_controller; gpus.len()];
 
     info!("Fan control started");
