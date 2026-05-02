@@ -7,7 +7,7 @@ use crate::{fanspeed::FanSpeed, interface::GPUInterface, temperature::GPUTempera
 pub struct NvidiaGPU<'a> {
     device: Device<'a>,
     name: String,
-    num_fans: u32,
+    pub num_fans: u32,
 }
 
 impl<'a> NvidiaGPU<'a> {
