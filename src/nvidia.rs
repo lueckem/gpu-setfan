@@ -1,5 +1,5 @@
 use anyhow::{self, Context};
-use nvml_wrapper::{Device, enum_wrappers::device::TemperatureSensor};
+use nvml_wrapper::{Device, Nvml, enum_wrappers::device::TemperatureSensor};
 use tracing::debug;
 
 use crate::{fanspeed::FanSpeed, interface::GPUInterface, temperature::GPUTemperature};
@@ -56,4 +56,18 @@ impl GPUInterface for NvidiaGPU<'_> {
         debug!("Restored default fan policy");
         Ok(())
     }
+}
+
+/// Detect and initialize all Nvidia GPUs with controllable fans
+pub fn initialize_nvidia(nvml: &Nvml) -> anyhow::Result<Vec<Box<dyn GPUInterface + '_>>> {
+    let num_devices = nvml.device_count().context("Failed to get device count")?;
+    let mut gpus: Vec<Box<dyn GPUInterface>> = Vec::with_capacity(num_devices as usize);
+    for i in 0..num_devices {
+        let device = nvml.device_by_index(i).context("Failed to get device")?;
+        let gpu = NvidiaGPU::init(device).context("Failed to initialize NvidiaGPU")?;
+        if gpu.num_fans > 0 {
+            gpus.push(Box::new(gpu));
+        }
+    }
+    Ok(gpus)
 }
