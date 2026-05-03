@@ -32,16 +32,23 @@ struct Args {
     #[arg(default_value = "80", help = "in °C")]
     target_temperature: Option<f64>,
 
-    #[arg(long, help = "Temperature in °C at which fans turn on")]
+    #[arg(
+        long,
+        help = "Temperature in °C at which fans turn on (must be < target)"
+    )]
     fan_on: Option<f64>,
 
-    #[arg(long, help = "Temperature in °C at which fans turn off")]
+    #[arg(
+        long,
+        help = "Temperature in °C at which fans turn off (must be < fan-on)"
+    )]
     fan_off: Option<f64>,
 
     #[arg(
         long,
         default_value = "30",
-        help = "Minimum fan speed in % (between 0 and 100)"
+        help = "Minimum fan speed in % (0-100)",
+        value_parser = clap::value_parser!(u32).range(0..=100),
     )]
     min_speed: Option<u32>,
 }
@@ -55,22 +62,23 @@ fn validate_args(args: Args) -> anyhow::Result<FanController> {
     // TODO: more checks and testing
     // TODO: warn if parameters are odd? E.g., min_fan_speed=90
     if target_temperature < 30.0 || target_temperature > 100.0 {
-        bail!("Invalid target temperature {target_temperature}! Choose a value between 30 and 100");
+        bail!("invalid target temperature {target_temperature}°C: must be between 30°C and 100°C");
     }
     if fan_on_temperature >= target_temperature {
-        bail!("The fan-on temperature has to be smaller than the target temperature");
+        bail!(
+            "fan-on temperature ({fan_on_temperature}°C) must be below target temperature ({target_temperature}°C)"
+        );
     }
     if fan_off_temperature >= fan_on_temperature {
-        bail!("The fan-off temperature has to be smaller than the fan-on temperature");
+        bail!(
+            "fan-off temperature ({fan_off_temperature}°C) must be below fan-on temperature ({fan_on_temperature}°C)"
+        );
     }
     if fan_on_temperature < 20.0 {
-        bail!("Invalid fan-on temperature {fan_on_temperature}! Choose a value larger than 20");
+        bail!("invalid fan-on temperature {fan_on_temperature}°C: must be at least 20°C");
     }
     if fan_off_temperature < 0.0 {
-        bail!("Invalid fan-off temperature {fan_off_temperature}! Choose a value larger than 0");
-    }
-    if min_fan_speed > 100 {
-        bail!("Invalid minimum fan speed {min_fan_speed}! Choose a value between 0 and 100");
+        bail!("invalid fan-off temperature {fan_off_temperature}°C: must be at least 0°C");
     }
 
     Ok(FanController::new(
@@ -114,7 +122,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     if gpus.is_empty() {
-        anyhow::bail!("Could not detect any GPU");
+        anyhow::bail!("could not detect any GPUs with controllable fans");
     }
     info!("Initialized GPUs: {}", gpus_to_string(&gpus));
 
@@ -130,7 +138,7 @@ fn main() -> anyhow::Result<()> {
                     error!("Failed to read temperature on '{}': {:#}", gpu.name(), err);
                     error!("Terminating program due to critical error");
                     restore_default_policies(&mut gpus);
-                    anyhow::bail!("Program terminated due to critical error");
+                    anyhow::bail!("program terminated due to critical error");
                 }
             };
 
@@ -140,7 +148,7 @@ fn main() -> anyhow::Result<()> {
                 error!("Failed to set fan speed on '{}': {:#}", gpu.name(), err);
                 error!("Terminating program due to critical error");
                 restore_default_policies(&mut gpus);
-                anyhow::bail!("Program terminated due to critical error");
+                anyhow::bail!("program terminated due to critical error");
             }
         }
 
