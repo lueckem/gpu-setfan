@@ -26,11 +26,12 @@ mod temperature;
 const UPDATE_PERIOD: u64 = 1000; // in ms
 
 fn main() -> anyhow::Result<()> {
-    let args = Cli::parse();
-    let fan_controller = FanController::try_from(args)?;
-
     logging::init_logging();
     info!("Program started");
+
+    // parse args
+    let args = Cli::parse();
+    let fan_controller = FanController::try_from(args)?;
 
     // setup ctrl-c signal handling
     let running = Arc::new(AtomicBool::new(true));
@@ -61,10 +62,10 @@ fn main() -> anyhow::Result<()> {
     }
     info!("Initialized GPUs: {}", gpus_to_string(&gpus));
 
+    // initialize fan controllers
     let mut fan_controllers = vec![fan_controller; gpus.len()];
 
     info!("Fan control started");
-
     while running.load(Ordering::SeqCst) {
         for (gpu, fan_controller) in gpus.iter_mut().zip(fan_controllers.iter_mut()) {
             let temperature = match gpu.read_temperature() {

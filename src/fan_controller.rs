@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use anyhow::bail;
-use tracing::debug;
+use tracing::{debug, info};
 
 use crate::{
     cli::Cli, fanspeed::FanSpeed, pi_controller::PIController, temperature::GPUTemperature,
@@ -114,7 +114,10 @@ impl TryFrom<Cli> for FanController {
 
         // TODO: warn if parameters are odd? E.g., min_fan_speed=90
 
-        // TODO: log the parsed parameters
+        info!("Target temperature: {target_temperature}°C");
+        info!("Fan-on temperature: {fan_on_temperature}°C");
+        info!("Fan-off temperature: {fan_off_temperature}°C");
+        info!("Minimum fan speed: {min_fan_speed}%");
 
         // after the above validation all temperatures and the fan speed
         // are in the allowed range, so the below unwraps never panic
