@@ -60,6 +60,7 @@ fn main() -> anyhow::Result<()> {
     if gpus.is_empty() {
         anyhow::bail!("could not detect any GPUs with controllable fans");
     }
+    gpus.shrink_to_fit();
     info!("Initialized GPUs: {}", gpus_to_string(&gpus));
 
     // initialize fan controllers
