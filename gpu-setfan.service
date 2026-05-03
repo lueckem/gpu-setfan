@@ -1,0 +1,11 @@
+[Unit]
+Description=GPU fan control
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/local/bin/gpu-setfan
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
