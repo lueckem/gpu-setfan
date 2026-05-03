@@ -1,8 +1,11 @@
 use std::time::Instant;
 
+use anyhow::bail;
 use tracing::debug;
 
-use crate::{fanspeed::FanSpeed, pi_controller::PIController, temperature::GPUTemperature};
+use crate::{
+    cli::Cli, fanspeed::FanSpeed, pi_controller::PIController, temperature::GPUTemperature,
+};
 
 /// Fan controller using a PI controller.
 ///
@@ -75,5 +78,51 @@ impl FanController {
 
         // this never panics since the input was in [-1, 1]
         u.try_into().unwrap()
+    }
+}
+
+impl TryFrom<Cli> for FanController {
+    type Error = anyhow::Error;
+
+    fn try_from(args: Cli) -> Result<Self, Self::Error> {
+        let target_temperature = args.target_temperature;
+        let fan_on_temperature = args.fan_on.unwrap_or(target_temperature - 10.0);
+        let fan_off_temperature = args.fan_off.unwrap_or(fan_on_temperature - 5.0);
+        let min_fan_speed = args.min_speed;
+
+        if target_temperature < 30.0 || target_temperature > 100.0 {
+            bail!(
+                "invalid target temperature {target_temperature}°C: must be between 30°C and 100°C"
+            );
+        }
+        if fan_on_temperature >= target_temperature {
+            bail!(
+                "fan-on temperature ({fan_on_temperature}°C) must be below target temperature ({target_temperature}°C)"
+            );
+        }
+        if fan_off_temperature >= fan_on_temperature {
+            bail!(
+                "fan-off temperature ({fan_off_temperature}°C) must be below fan-on temperature ({fan_on_temperature}°C)"
+            );
+        }
+        if fan_on_temperature < 20.0 {
+            bail!("invalid fan-on temperature {fan_on_temperature}°C: must be at least 20°C");
+        }
+        if fan_off_temperature < 0.0 {
+            bail!("invalid fan-off temperature {fan_off_temperature}°C: must be at least 0°C");
+        }
+
+        // TODO: warn if parameters are odd? E.g., min_fan_speed=90
+
+        // TODO: log the parsed parameters
+
+        // after the above validation all temperatures and the fan speed
+        // are in the allowed range, so the below unwraps never panic
+        Ok(Self::new(
+            target_temperature.try_into().unwrap(),
+            fan_on_temperature.try_into().unwrap(),
+            fan_off_temperature.try_into().unwrap(),
+            min_fan_speed.try_into().unwrap(),
+        ))
     }
 }

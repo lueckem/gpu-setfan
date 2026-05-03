@@ -3,17 +3,18 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
 
-use anyhow::bail;
 use clap::Parser;
 use nvml_wrapper::Nvml;
 use tracing::{debug, error, info, warn};
 
 use crate::{
+    cli::Cli,
     fan_controller::FanController,
     interface::{GPUInterface, gpus_to_string},
     nvidia::initialize_nvidia_gpus,
 };
 
+mod cli;
 mod fan_controller;
 mod fanspeed;
 mod interface;
@@ -24,78 +25,12 @@ mod temperature;
 
 const UPDATE_PERIOD: u64 = 1000; // in ms
 
-// TODO: description
-
-#[derive(Parser, Debug)]
-#[command(version, about)]
-struct Args {
-    #[arg(default_value = "80", help = "in °C")]
-    target_temperature: Option<f64>,
-
-    #[arg(
-        long,
-        help = "Temperature in °C at which fans turn on (must be < target)"
-    )]
-    fan_on: Option<f64>,
-
-    #[arg(
-        long,
-        help = "Temperature in °C at which fans turn off (must be < fan-on)"
-    )]
-    fan_off: Option<f64>,
-
-    #[arg(
-        long,
-        default_value = "30",
-        help = "Minimum fan speed in % (0-100)",
-        value_parser = clap::value_parser!(u32).range(0..=100),
-    )]
-    min_speed: Option<u32>,
-}
-
-fn validate_args(args: Args) -> anyhow::Result<FanController> {
-    let target_temperature = args.target_temperature.unwrap();
-    let fan_on_temperature = args.fan_on.unwrap_or(target_temperature - 10.0);
-    let fan_off_temperature = args.fan_off.unwrap_or(fan_on_temperature - 5.0);
-    let min_fan_speed = args.min_speed.unwrap();
-
-    // TODO: more checks and testing
-    // TODO: warn if parameters are odd? E.g., min_fan_speed=90
-    if target_temperature < 30.0 || target_temperature > 100.0 {
-        bail!("invalid target temperature {target_temperature}°C: must be between 30°C and 100°C");
-    }
-    if fan_on_temperature >= target_temperature {
-        bail!(
-            "fan-on temperature ({fan_on_temperature}°C) must be below target temperature ({target_temperature}°C)"
-        );
-    }
-    if fan_off_temperature >= fan_on_temperature {
-        bail!(
-            "fan-off temperature ({fan_off_temperature}°C) must be below fan-on temperature ({fan_on_temperature}°C)"
-        );
-    }
-    if fan_on_temperature < 20.0 {
-        bail!("invalid fan-on temperature {fan_on_temperature}°C: must be at least 20°C");
-    }
-    if fan_off_temperature < 0.0 {
-        bail!("invalid fan-off temperature {fan_off_temperature}°C: must be at least 0°C");
-    }
-
-    Ok(FanController::new(
-        target_temperature.try_into().unwrap(),
-        fan_on_temperature.try_into().unwrap(),
-        fan_off_temperature.try_into().unwrap(),
-        min_fan_speed.try_into().unwrap(),
-    ))
-}
-
 fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
-    let fan_controller = validate_args(args)?;
+    let args = Cli::parse();
+    let fan_controller = FanController::try_from(args)?;
 
     logging::init_logging();
     info!("Program started");
-    // TODO: log the parsed parameters
 
     // setup ctrl-c signal handling
     let running = Arc::new(AtomicBool::new(true));
