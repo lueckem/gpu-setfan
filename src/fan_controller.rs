@@ -165,3 +165,92 @@ impl TryFrom<Cli> for FanController {
         ))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use clap::Parser;
+
+    use super::*;
+
+    fn controller_from_command(command: &[&str]) -> anyhow::Result<FanController> {
+        let command = std::iter::once(&"").chain(command.iter());
+        let cli = Cli::parse_from(command);
+        FanController::try_from(cli)
+    }
+
+    #[test]
+    fn from_command_default() {
+        let controller = controller_from_command(&[]).unwrap();
+        assert_eq!(controller.target_temperature.inner(), 80.0);
+        assert_eq!(controller.fan_on_temperature.inner(), 70.0);
+        assert_eq!(controller.fan_off_temperature.inner(), 65.0);
+        assert_eq!(controller.min_fan_speed.inner(), 0.3);
+    }
+
+    #[test]
+    fn from_command_target_temperature() {
+        let controller = controller_from_command(&["75"]).unwrap();
+        assert_eq!(controller.target_temperature.inner(), 75.0);
+        assert_eq!(controller.fan_on_temperature.inner(), 65.0);
+        assert_eq!(controller.fan_off_temperature.inner(), 60.0);
+    }
+
+    #[test]
+    fn from_command_fan_on() {
+        let controller = controller_from_command(&["--fan-on", "60"]).unwrap();
+        assert_eq!(controller.target_temperature.inner(), 80.0);
+        assert_eq!(controller.fan_on_temperature.inner(), 60.0);
+        assert_eq!(controller.fan_off_temperature.inner(), 55.0);
+    }
+
+    #[test]
+    fn from_command_fan_off() {
+        let controller = controller_from_command(&["--fan-off", "60"]).unwrap();
+        assert_eq!(controller.target_temperature.inner(), 80.0);
+        assert_eq!(controller.fan_on_temperature.inner(), 70.0);
+        assert_eq!(controller.fan_off_temperature.inner(), 60.0);
+    }
+
+    #[test]
+    fn from_command_all() {
+        let controller =
+            controller_from_command(&["81", "--fan-on=68", "--fan-off=61", "--min-speed=33"])
+                .unwrap();
+        assert_eq!(controller.target_temperature.inner(), 81.0);
+        assert_eq!(controller.fan_on_temperature.inner(), 68.0);
+        assert_eq!(controller.fan_off_temperature.inner(), 61.0);
+        assert_eq!(controller.min_fan_speed.inner(), 0.33);
+    }
+
+    #[test]
+    fn from_command_min_speed() {
+        let controller = controller_from_command(&["--min-speed", "40"]).unwrap();
+        assert_eq!(controller.min_fan_speed.inner(), 0.4);
+    }
+
+    #[test]
+    fn from_command_invalid_target() {
+        assert!(controller_from_command(&["10"]).is_err());
+        assert!(controller_from_command(&["105"]).is_err());
+    }
+
+    #[test]
+    fn from_command_fan_on_too_large() {
+        assert!(controller_from_command(&["70", "--fan-on", "75"]).is_err());
+    }
+
+    #[test]
+    fn from_command_fan_on_too_small() {
+        assert!(controller_from_command(&["70", "--fan-on", "10"]).is_err());
+    }
+
+    #[test]
+    fn from_command_fan_off_too_large() {
+        assert!(controller_from_command(&["80", "--fan-on=70", "--fan-off=75"]).is_err());
+    }
+
+    #[test]
+    fn from_command_fan_off_too_small() {
+        assert!(controller_from_command(&["80", "--fan-on=70", "--fan-off=-1"]).is_err());
+    }
+}
