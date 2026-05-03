@@ -66,8 +66,8 @@ fn validate_args(args: Args) -> anyhow::Result<FanController> {
     if fan_on_temperature < 20.0 {
         bail!("Invalid fan-on temperature {fan_on_temperature}! Choose a value larger than 20");
     }
-    if fan_off_temperature < 15.0 {
-        bail!("Invalid fan-off temperature {fan_on_temperature}! Choose a value larger than 15");
+    if fan_off_temperature < 0.0 {
+        bail!("Invalid fan-off temperature {fan_off_temperature}! Choose a value larger than 0");
     }
     if min_fan_speed > 100 {
         bail!("Invalid minimum fan speed {min_fan_speed}! Choose a value between 0 and 100");
