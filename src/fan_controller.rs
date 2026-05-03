@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use anyhow::bail;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::{
     cli::Cli, fanspeed::FanSpeed, pi_controller::PIController, temperature::GPUTemperature,
@@ -90,6 +90,7 @@ impl TryFrom<Cli> for FanController {
         let fan_off_temperature = args.fan_off.unwrap_or(fan_on_temperature - 5.0);
         let min_fan_speed = args.min_speed;
 
+        // check valid parameters
         if target_temperature < 30.0 || target_temperature > 100.0 {
             bail!(
                 "invalid target temperature {target_temperature}°C: must be between 30°C and 100°C"
@@ -112,12 +113,47 @@ impl TryFrom<Cli> for FanController {
             bail!("invalid fan-off temperature {fan_off_temperature}°C: must be at least 0°C");
         }
 
-        // TODO: warn if parameters are odd? E.g., min_fan_speed=90
-
         info!("Target temperature: {target_temperature}°C");
         info!("Fan-on temperature: {fan_on_temperature}°C");
         info!("Fan-off temperature: {fan_off_temperature}°C");
         info!("Minimum fan speed: {min_fan_speed}%");
+
+        // warn on valid but odd parameters
+        if target_temperature < 50.0 {
+            warn!(
+                "Target temperature {target_temperature}°C is rather low. Recommended: 65°C - 85°C"
+            );
+        }
+        if target_temperature > 90.0 {
+            warn!(
+                "Target temperature {target_temperature}°C is very high and could cause thermal throttling. Recommended: 65°C - 85°C"
+            );
+        }
+        if target_temperature - fan_on_temperature <= 5.0 {
+            warn!(
+                "Fan-on temperature is very close to target temperature, which may limit the controller's ability to react"
+            )
+        }
+        if target_temperature - fan_off_temperature < 10.0 {
+            warn!(
+                "Fan-off temperature is very close to target temperature, which may reduce the controller's ability to operate"
+            )
+        }
+        if fan_on_temperature - fan_off_temperature <= 3.0 {
+            warn!(
+                "Fan-on and fan-off temperature are very close, which may cause frequent cycling that negatively affects fan lifetime"
+            )
+        }
+        if min_fan_speed >= 60 {
+            warn!(
+                "Minimum fan speed is very high. Recommended: set to lowest speed so that the fans reliably ramp up, typically around 30%"
+            )
+        }
+        if min_fan_speed < 30 {
+            warn!(
+                "Low minimum fan speed. Check that the fans are able to reliably ramp up. If not, increase this value"
+            )
+        }
 
         // after the above validation all temperatures and the fan speed
         // are in the allowed range, so the below unwraps never panic
