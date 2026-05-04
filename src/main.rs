@@ -26,11 +26,9 @@ mod temperature;
 const UPDATE_PERIOD: u64 = 1000; // in ms
 
 fn main() -> anyhow::Result<()> {
+    let args = Cli::parse();
     logging::init_logging();
     info!("Program started");
-
-    // parse args
-    let args = Cli::parse();
     let fan_controller = FanController::try_from(args)?;
 
     // setup ctrl-c signal handling
