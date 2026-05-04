@@ -1,8 +1,11 @@
 # gpu-setfan
 
+[![CI](https://github.com/lueckem/gpu-setfan/actions/workflows/ci.yml/badge.svg)](https://github.com/lueckem/gpu-setfan/actions/workflows/ci.yml)
+[![Version info](https://img.shields.io/crates/v/gpu-setfan.svg)](https://crates.io/crates/gpu-setfan)
+
 Controls GPU fan speed to maintain a target temperature.
 Instead of providing a fan curve, like many other tools require, you only specify the temperature at which the GPU should run under load.
-`gpu-setfan` automatically finds the smallest fan speed to maintain that target temperature, which minimizes the fan noise.
+`gpu-setfan` automatically finds the smallest fan speed to maintain that target temperature, which minimizes fan noise.
 
 Supports multiple GPUs: controls the fan speed of each detected GPU separately.
 
@@ -20,9 +23,18 @@ The general behavior is as follows:
 
 Because the `--fan-off` temperature is smaller than the `--fan-on` temperature, frequent on/off cycling is prevented (hysteresis).
 
+## Installation
+Download a precompiled binary from the [release page](https://github.com/lueckem/gpu-setfan/releases).
+
+If you have Rust installed, you can also get the latest release from [crates.io](https://crates.io/crates/gpu-setfan) using the cargo package manager:
+
+```sh
+cargo install gpu-setfan
+```
+
 ## Usage
 
-```
+```sh
 gpu-setfan [OPTIONS] [TARGET_TEMPERATURE]
 ```
 
