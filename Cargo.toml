@@ -2,6 +2,11 @@
 name = "gpu-setfan"
 authors = ["Marvin Lücke"]
 description = "GPU fan control via temperature setpoint"
+readme = "README.md"
+homepage = "https://github.com/lueckem/gpu-setfan"
+repository = "https://github.com/lueckem/gpu-setfan"
+categories = ["hardware-support"]
+keywords = ["hardware", "gpu", "fan", "temperature"]
 license = "MIT"
 edition = "2024"
 rust-version = "1.94.0"
