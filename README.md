@@ -76,3 +76,7 @@ The easiest way to run `gpu-setfan` automatically on startup is to use a systemd
   ```
 3. To pass custom arguments, edit `ExecStart` in the service file `gpu-setfan.service` before enabling the service.
    For example, `ExecStart=/usr/local/bin/gpu-setfan --fan-on=60 --min-speed=40 75`.
+4. Check if the service is running correctly by inspecting the logs:
+   ```sh
+   journalctl -u gpu-setfan
+   ```
