@@ -27,7 +27,9 @@ const UPDATE_PERIOD: u64 = 1000; // in ms
 
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
-    logging::init_logging();
+    if let Err(err) = logging::init_logging() {
+        println!("WARNING: Failed to setup logging: {:#}", err);
+    }
     info!("Program started");
     let fan_controller = FanController::try_from(args)?;
 
