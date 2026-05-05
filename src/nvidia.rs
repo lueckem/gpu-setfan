@@ -14,7 +14,7 @@ impl<'a> NvidiaGPU<'a> {
     pub fn init(device: Device<'a>) -> anyhow::Result<Self> {
         let name = device.name().unwrap_or("UNKNOWN NVIDIA GPU".into());
         let num_fans = device.num_fans().context("Failed to get number of fans")?;
-        debug!("Initialized NvidiaGPU {name} with {num_fans} fans");
+        debug!("Initialized NvidiaGPU '{name}' with {num_fans} fans");
         Ok(Self {
             device,
             name,
@@ -30,7 +30,7 @@ impl GPUInterface for NvidiaGPU<'_> {
 
     fn read_temperature(&self) -> anyhow::Result<GPUTemperature> {
         let temp = self.device.temperature(TemperatureSensor::Gpu)?;
-        debug!("Read temperature {temp}");
+        debug!("'{}': read temperature {}", self.name, temp);
         let temp: GPUTemperature = (temp as f64).try_into()?;
         Ok(temp)
     }
@@ -40,7 +40,7 @@ impl GPUInterface for NvidiaGPU<'_> {
         for fan_index in 0..self.num_fans {
             self.device.set_fan_speed(fan_index, target)?;
         }
-        debug!("Fan speed set to {}", target);
+        debug!("'{}': fan speed set to {}", self.name, target);
         Ok(())
     }
 
@@ -48,7 +48,7 @@ impl GPUInterface for NvidiaGPU<'_> {
         for fan_index in 0..self.num_fans {
             self.device.set_default_fan_speed(fan_index)?;
         }
-        debug!("Restored default fan policy");
+        debug!("'{}': restored default fan policy", self.name);
         Ok(())
     }
 }
