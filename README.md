@@ -67,7 +67,7 @@ gpu-setfan --fan-on=68 --fan-off=62 75
 
 ### Linux
 The easiest way to run `gpu-setfan` automatically on startup is to use a systemd service.
-1. Download the binary and move it to `/usr/local/bin/gpu-setfan`.
+1. Download the `gpu-setfan` binary and move it to `/usr/local/bin/gpu-setfan`.
 2. Download the provided service file `gpu-setfan.service` from this repository and enable the service:
   ```sh
   mv gpu-setfan.service /etc/systemd/system/
@@ -80,3 +80,15 @@ The easiest way to run `gpu-setfan` automatically on startup is to use a systemd
    ```sh
    journalctl -u gpu-setfan
    ```
+
+### Windows
+The easiest way to run `gpu-setfan` automatically on startup is to use the [nssm](https://nssm.cc/usage) tool to create a windows service.
+1. Download the `gpu-setfan` binary and move it to `C:\Program Files\gpu-setfan\gpu-setfan.exe`.
+2. Install nssm, for example via winget in the terminal: `winget install nssm`.
+3. Create and start the service in the terminal:
+   ```sh
+    nssm install GpuSetFan "C:\Program Files\gpu-setfan\gpu-setfan.exe"
+    nssm start GpuSetFan
+   ```
+   You can also specify arguments after the path, for example `nssm install GpuSetFan "C:\Program Files\gpu-setfan\gpu-setfan.exe" 75 --fan-on 60`
+4. Check if the service is running correctly by inspecting the logs at `C:\ProgramData\gpu-setfan\logs`.
