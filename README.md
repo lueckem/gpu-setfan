@@ -9,7 +9,9 @@ Instead of providing a fan curve, like many other tools require, you only specif
 
 Supports multiple GPUs: controls the fan speed of each detected GPU separately.
 
-**Requirements**: At the moment only **Nvidia** GPUs are supported.
+**Requirements**:
+- Windows or Linux (x86_64)
+- At the moment only **Nvidia** GPUs are supported
 
 
 ## How it works
@@ -35,10 +37,12 @@ cargo install gpu-setfan
 ```
 
 ## Usage
+`gpu-setfan` is a command line tool, so you interact with it via the terminal:
 
 ```sh
 gpu-setfan [OPTIONS] [TARGET_TEMPERATURE]
 ```
+Note that you likely need elevated privileges to set GPU fan speed, i.e., open the terminal as administrator on Windows, or run with `sudo` on Linux.
 
 ### Arguments
 
