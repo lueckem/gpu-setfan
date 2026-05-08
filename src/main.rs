@@ -30,7 +30,6 @@ fn main() -> anyhow::Result<()> {
     if let Err(err) = logging::init_logging() {
         println!("WARNING: Failed to setup logging: {:#}", err);
     }
-    info!("Program started");
     let fan_controller = FanController::try_from(args)?;
 
     // setup ctrl-c signal handling
@@ -61,12 +60,18 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("could not detect any GPUs with controllable fans");
     }
     gpus.shrink_to_fit();
-    info!("Initialized GPUs: {}", gpus_to_string(&gpus));
+    let gpu_gpus = if gpus.len() == 1 { "GPU" } else { "GPUs" };
+    info!(
+        "Found {} {}: {}",
+        gpus.len(),
+        gpu_gpus,
+        gpus_to_string(&gpus)
+    );
 
     // initialize fan controllers
     let mut fan_controllers = vec![fan_controller; gpus.len()];
 
-    info!("Fan control started");
+    info!("Fan control active");
     while running.load(Ordering::SeqCst) {
         for (gpu, fan_controller) in gpus.iter_mut().zip(fan_controllers.iter_mut()) {
             let temperature = match gpu.read_temperature() {

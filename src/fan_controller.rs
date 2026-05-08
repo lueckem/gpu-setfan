@@ -113,10 +113,9 @@ impl TryFrom<Cli> for FanController {
             bail!("invalid fan-off temperature {fan_off_temperature}°C: must be at least 0°C");
         }
 
-        info!("Target temperature: {target_temperature}°C");
-        info!("Fan-on temperature: {fan_on_temperature}°C");
-        info!("Fan-off temperature: {fan_off_temperature}°C");
-        info!("Minimum fan speed: {min_fan_speed}%");
+        info!(
+            "Configuration: target {target_temperature}°C | fan-on {fan_on_temperature}°C | fan-off {fan_off_temperature}°C | min-speed {min_fan_speed}%"
+        );
 
         // warn on valid but odd parameters
         if target_temperature < 50.0 {
