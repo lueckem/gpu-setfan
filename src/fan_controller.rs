@@ -106,8 +106,8 @@ impl TryFrom<Cli> for FanController {
                 "fan-off temperature ({fan_off_temperature}°C) must be below fan-on temperature ({fan_on_temperature}°C)"
             );
         }
-        if fan_on_temperature < 20.0 {
-            bail!("invalid fan-on temperature {fan_on_temperature}°C: must be at least 20°C");
+        if fan_on_temperature < 5.0 {
+            bail!("invalid fan-on temperature {fan_on_temperature}°C: must be at least 5°C");
         }
         if fan_off_temperature < 0.0 {
             bail!("invalid fan-off temperature {fan_off_temperature}°C: must be at least 0°C");
@@ -123,7 +123,7 @@ impl TryFrom<Cli> for FanController {
                 "Target temperature {target_temperature}°C is rather low. Recommended: 65°C - 85°C"
             );
         }
-        if target_temperature > 90.0 {
+        if target_temperature > 85.0 {
             warn!(
                 "Target temperature {target_temperature}°C is very high and could cause thermal throttling. Recommended: 65°C - 85°C"
             );
@@ -148,7 +148,7 @@ impl TryFrom<Cli> for FanController {
                 "Minimum fan speed is very high. Recommended: set to lowest speed so that the fans reliably ramp up, typically around 30%"
             )
         }
-        if min_fan_speed < 30 {
+        if min_fan_speed <= 25 {
             warn!(
                 "Low minimum fan speed. Check that the fans are able to reliably ramp up. If not, increase this value"
             )
@@ -240,7 +240,7 @@ mod tests {
 
     #[test]
     fn from_command_fan_on_too_small() {
-        assert!(controller_from_command(&["70", "--fan-on", "10"]).is_err());
+        assert!(controller_from_command(&["70", "--fan-on", "4"]).is_err());
     }
 
     #[test]
