@@ -36,6 +36,7 @@ If you have Rust installed, you can also get the latest release from [crates.io]
 cargo install gpu-setfan
 ```
 
+
 ## Usage
 `gpu-setfan` is a command line tool, so you interact with it via the terminal:
 
@@ -64,6 +65,12 @@ Keep GPU at 75°C, turning fans on at 68°C and off at 62°C:
 
 ```sh
 gpu-setfan --fan-on=68 --fan-off=62 75
+```
+
+Keep GPU at 75°C, never turn fans completely off:
+
+```sh
+gpu-setfan --fan-on=5 75
 ```
 
 
