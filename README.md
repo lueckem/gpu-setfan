@@ -26,6 +26,16 @@ The general behavior is as follows:
 
 Because the `--fan-off` temperature is smaller than the `--fan-on` temperature, frequent on/off cycling is prevented (hysteresis).
 
+### Example
+![Plot](assets/plot.png)
+
+**Figure**: A GPU stress test is started at t=20, causing a steep increase in temperature.
+The fans turn on and initially run at the `--min-speed` while the temperature continues to climb.
+As the temperature reaches the target 75°C at around t=55, the PI controller ramps up the fan speed to compensate.
+After a settling period from t=100 to t=170, thermal equilibrium is reached at a fan speed of 54%.
+The stress test is stopped at t=200, followed by a sharp drop in temperature and fan speed.
+The fans remain on until the temperature falls below the `--fan-off` threshold at around t=240.
+
 
 ## Installation
 Download a precompiled binary from the [release page](https://github.com/lueckem/gpu-setfan/releases).
