@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 (2026-05-10)
+
+Improved log messages and tweaked valid parameter ranges.
+
 ## 0.2.0 (2026-05-07)
 
 Added Windows support.
